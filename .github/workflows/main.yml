@@ -20,21 +20,21 @@ jobs:
 
     - name: Create RDP User with Secure Password
       run: |
-        net user RDP "P>3461#q^0}uhmEV" /add
+        net user RDP "Admin@Rdp2026" /add /y
         net localgroup administrators RDP /add
         Write-Host "=== RDP ACCESS ==="
         Write-Host "Username: RDP"
-        Write-Host "Password: P>3461#q^0}uhmEV"
+        Write-Host "Password: Admin@Rdp2026"
         Write-Host "=================="
 
     - name: Install Tailscale
       run: |
         Invoke-WebRequest -Uri "https://tailscale.com" -OutFile "tailscale-setup.exe"
-        Start-Process -FilePath ".\tailscale-setup.exe" -ArgumentList "/安静" -Wait
+        Start-Process -FilePath ".\tailscale-setup.exe" -ArgumentList "/quiet" -Wait
 
     - name: Establish Tailscale Connection
       env:
-        TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }} # ⚠️ गिटहब Secrets में अपनी टेलस्केल की Auth Key डाल देना
+        TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }} # गिटहब Secrets में अपनी टेलस्केल की Auth Key डाल देना
       run: |
         & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=$env:TAILSCALE_AUTHKEY
 
