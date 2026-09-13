@@ -1,0 +1,54 @@
+name: secure-rdp
+
+on:
+  workflow_dispatch: # इससे तुम्हें जब मन करे बटन दबाकर RDP चालू करने का ऑप्शन मिलेगा
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 360 # ठीक 6 घंटे (360 मिनट) का पूरा टाइमर
+
+    steps:
+    - name: Set up job
+      run: echo "Starting RDP Setup..."
+
+    - name: Configure Core RDP Settings
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+
+    - name: Create RDP User with Secure Password
+      run: |
+        net user RDP "P>3461#q^0}uhmEV" /add
+        net localgroup administrators RDP /add
+        Write-Host "=== RDP ACCESS ==="
+        Write-Host "Username: RDP"
+        Write-Host "Password: P>3461#q^0}uhmEV"
+        Write-Host "=================="
+
+    - name: Install Tailscale
+      run: |
+        Invoke-WebRequest -Uri "https://tailscale.com" -OutFile "tailscale-setup.exe"
+        Start-Process -FilePath ".\tailscale-setup.exe" -ArgumentList "/安静" -Wait
+
+    - name: Establish Tailscale Connection
+      env:
+        TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }} # ⚠️ गिटहब Secrets में अपनी टेलस्केल की Auth Key डाल देना
+      run: |
+        & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=$env:TAILSCALE_AUTHKEY
+
+    - name: Verify RDP Accessibility
+      run: |
+        $ip = (& "C:\Program Files\Tailscale\tailscale.exe" ip -4)
+        Write-Host "RDP IP Address: $ip"
+
+    - name: Maintain Connection
+      run: |
+        $loop = 0
+        while ($loop -lt 72) {
+          $time = Get-Date -Format "dd/MM/yyyy HH:mm:ss"
+          Write-Host "[$time] RDP Active - Use Ctrl+C in workflow to terminate"
+          Start-Sleep -Seconds 300
+          $loop++
+        }
